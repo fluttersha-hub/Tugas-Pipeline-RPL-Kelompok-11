@@ -27,7 +27,9 @@
         <label>Nama lengkap sesuai KTP<input type="text" name="name" autocomplete="name" required></label>
         <div class="form-grid"><label>NIK (16 digit)<input type="text" name="nik" inputmode="numeric" minlength="16" maxlength="16" pattern="[0-9]{16}" required></label><label>Nomor HP / WhatsApp<input type="tel" name="phone" autocomplete="tel" required></label></div>
         <label>Email aktif<input type="email" name="email" autocomplete="email" required></label>
-        <div class="form-grid"><label>Tanggal lahir<input type="date" name="birth_date" required></label><label>Jenis kelamin<select name="gender" required><option value="">Pilih</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></label></div>
+        <div class="form-grid"><label>Tempat lahir<input type="text" name="birth_place" autocomplete="off"></label><label>Tanggal lahir<input type="date" name="birth_date" required></label></div>
+        <div class="form-grid"><label>Jenis kelamin<select name="gender" required><option value="">Pilih</option><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></label><label>Pekerjaan<input type="text" name="occupation"></label></div>
+        <div class="form-grid"><label>Kecamatan domisili<select name="home_district" id="district-select" required><option value="">Pilih kecamatan</option>{{range .Districts}}<option value="{{.}}" data-neighborhoods="{{join (index $.Neighborhoods .) "|"}}">{{.}}</option>{{end}}</select></label><label>Kelurahan domisili<select name="home_neighborhood" id="neighborhood-select" required disabled><option value="">Pilih kecamatan dahulu</option></select></label></div>
         <label>Alamat domisili<textarea name="address" rows="2" required></textarea></label>
         <label>Foto KTP <span class="label-help">(JPG/PNG, maksimal 5 MB)</span><input type="file" name="ktp" accept="image/jpeg,image/png"></label>
         <label>Kata sandi <span class="label-help">(minimal 8 karakter)</span><input type="password" name="password" minlength="8" autocomplete="new-password" required></label>

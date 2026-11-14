@@ -29,20 +29,26 @@ const (
 )
 
 type User struct {
-	ID              string    `json:"id"`
-	NIK             string    `json:"nik"`
-	Name            string    `json:"name"`
-	Email           string    `json:"email"`
-	Phone           string    `json:"phone"`
-	BirthDate       string    `json:"birth_date"`
-	Gender          string    `json:"gender"`
-	Address         string    `json:"address"`
-	KTPPath         string    `json:"ktp_path,omitempty"`
-	Role            string    `json:"role"`
-	AccountStatus   string    `json:"account_status"`
-	RejectionReason string    `json:"rejection_reason,omitempty"`
-	PasswordHash    string    `json:"password_hash"`
-	CreatedAt       time.Time `json:"created_at"`
+	ID                 string    `json:"id"`
+	NIK                string    `json:"nik"`
+	Name               string    `json:"name"`
+	Email              string    `json:"email"`
+	Phone              string    `json:"phone"`
+	BirthPlace         string    `json:"birth_place,omitempty"`
+	BirthDate          string    `json:"birth_date"`
+	Gender             string    `json:"gender"`
+	Address            string    `json:"address"`
+	Occupation         string    `json:"occupation,omitempty"`
+	KTPPath            string    `json:"ktp_path,omitempty"`
+	HomeDistrict       string    `json:"home_district,omitempty"`
+	HomeNeighborhood   string    `json:"home_neighborhood,omitempty"`
+	Role               string    `json:"role"`
+	AccountStatus      string    `json:"account_status"`
+	OfficeDistrict     string    `json:"office_district,omitempty"`
+	OfficeNeighborhood string    `json:"office_neighborhood,omitempty"`
+	RejectionReason    string    `json:"rejection_reason,omitempty"`
+	PasswordHash       string    `json:"password_hash"`
+	CreatedAt          time.Time `json:"created_at"`
 }
 
 type Service struct {
@@ -59,15 +65,17 @@ type SuratRequest struct {
 	UserID         string            `json:"user_id"`
 	ServiceCode    string            `json:"service_code"`
 	ServiceName    string            `json:"service_name"`
+	District       string            `json:"kecamatan,omitempty"`
+	Neighborhood   string            `json:"kelurahan,omitempty"`
 	IsSelf         bool              `json:"is_self"`
 	Applicant      map[string]string `json:"applicant"`
 	Specific       map[string]string `json:"specific"`
+	Purpose        string            `json:"keperluan,omitempty"`
 	RTLetterNumber string            `json:"rt_letter_number"`
 	Attachments    []string          `json:"attachments,omitempty"`
 	OfficialNumber string            `json:"official_number,omitempty"`
 	Status         string            `json:"status"`
 	AdminNote      string            `json:"admin_note,omitempty"`
-	QRHash         string            `json:"qr_hash,omitempty"`
 	CreatedAt      time.Time         `json:"created_at"`
 	UpdatedAt      time.Time         `json:"updated_at"`
 }
@@ -198,20 +206,69 @@ type App struct {
 }
 
 type PageData struct {
-	Title      string
-	Page       string
-	User       *User
-	Error      string
-	Notice     string
-	Services   []Service
-	Categories []string
-	Requests   []SuratRequest
-	Complaints []Complaint
-	Residents  []User
-	Request    *SuratRequest
-	Complaint  *Complaint
-	Stats      Stats
-	Code       string
+	Title         string
+	Page          string
+	User          *User
+	Error         string
+	Notice        string
+	Services      []Service
+	Categories    []string
+	Requests      []SuratRequest
+	Complaints    []Complaint
+	Residents     []User
+	Request       *SuratRequest
+	Complaint     *Complaint
+	Stats         Stats
+	Code          string
+	Districts     []string
+	Neighborhoods map[string][]string
+}
+
+type LetterOffice struct {
+	Neighborhood string `json:"kelurahan"`
+	District     string `json:"kecamatan"`
+	Name         string `json:"nama_tempat"`
+	Mayor        string `json:"nama_lurah"`
+	Address      string `json:"alamat"`
+}
+
+type DraftPreviewRequest struct {
+	UserID      string            `json:"user_id"`
+	ServiceCode string            `json:"jenis_surat_id"`
+	Additional  map[string]string `json:"data_tambahan"`
+}
+
+type DraftField struct {
+	Label string `json:"label"`
+	Value string `json:"value"`
+}
+
+type DraftData struct {
+	LetterName       string       `json:"jenis_surat"`
+	Header           string       `json:"kop_kelurahan"`
+	District         string       `json:"kecamatan"`
+	Neighborhood     string       `json:"kelurahan"`
+	OfficeName       string       `json:"nama_kantor"`
+	OfficeAddress    string       `json:"alamat_kantor"`
+	OfficeEmail      string       `json:"email_kantor,omitempty"`
+	FullName         string       `json:"nama_lengkap"`
+	NIK              string       `json:"nik"`
+	Birth            string       `json:"tempat_tgl_lahir"`
+	Gender           string       `json:"jenis_kelamin"`
+	Occupation       string       `json:"pekerjaan"`
+	Address          string       `json:"alamat_lengkap"`
+	Purpose          string       `json:"keperluan"`
+	OfficialNumber   string       `json:"nomor_surat"`
+	DraftDate        string       `json:"tanggal_draf"`
+	MayorName        string       `json:"nama_lurah"`
+	MayorNIP         string       `json:"nip_lurah"`
+	AdditionalFields []DraftField `json:"data_tambahan"`
+}
+
+type DraftPreviewResponse struct {
+	Status    string     `json:"status"`
+	Message   string     `json:"message,omitempty"`
+	DraftData *DraftData `json:"draft_data,omitempty"`
 }
 
 type Stats struct {
@@ -261,6 +318,43 @@ var complaintCategories = []string{
 	"Pelayanan Publik", "Pungli, Gratifikasi, dan KKN", "Sampah", "Trans Palu",
 }
 
+var letterOffices = []LetterOffice{
+	{"Kawatuna", "Mantikulore", "Kantor Kelurahan Kawatuna", "Mita Niaresvy Fazela, S.STP., MM (Plt. Lurah)", "Jl. Gn. Bulili, Kawatuna, Kec. Mantikulore, Kota Palu, Sulawesi Tengah 94111"},
+	{"Lasoani", "Mantikulore", "Kantor Kelurahan Lasoani", "Erwin, S.H", "Jl. Bulu Masomba, Lasoani, Kec. Mantikulore, Kota Palu, Sulawesi Tengah 94118"},
+	{"Layana Indah", "Mantikulore", "Kantor Kelurahan Layana Indah", "Sarlin, SE", "Jl. Layana Indah, Mantikulore, Palu City, Central Sulawesi 94147"},
+	{"Poboya", "Mantikulore", "Kantor Kelurahan Poboya", "Muhamad Zulfin", "Jl. Tanamodindi, Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94118"},
+	{"Talise", "Mantikulore", "Kantor Kelurahan Talise", "Mohamad Iqbal, S.H., M.H", "Jl. Letjend Suprapto No.11, Talise, Kec. Mantikulore, Kota Palu, Sulawesi Tengah 94118"},
+	{"Talise Valangguni", "Mantikulore", "Kantor Kelurahan Talise Valangguni", "Hasan Hamid, S.Sos", "Jl. Dayodara Lrg. Pakora 2 No.22, Besusu Tim., Kec. Palu Tim., Kota Palu, Sulawesi Tengah 94118"},
+	{"Tanamodindi", "Mantikulore", "Kantor Kelurahan Tanamodindi", "Hamdan, S.Sos", "Jl. Veteran Lasoani, Jl. Veteran No.59, Tanamodindi, Kec. Palu Tim., Kota Palu, Sulawesi Tengah 94111"},
+	{"Tondo", "Mantikulore", "Kantor Kelurahan Tondo", "Mursidin Siraj, S.Pd.I", "Jl. Soekarno-Hatta No. 1, Kota Palu, Sulawesi Tengah 94118"},
+	{"Balaroa", "Palu Barat", "Kantor Kelurahan Balaroa", "Cristian, S.A.P", "Jl. Yambaere No.5, Balaroa, Kec. Palu Bar., Kota Palu, Sulawesi Tengah 94226"},
+	{"Baru", "Palu Barat", "Kantor Kelurahan Baru", "Bachira Ulfah, S.Sos (Plh. Lurah)", "Jl. Teuku Umar, Baru, Kec. Palu Bar., Kota Palu, Sulawesi Tengah 94111"},
+	{"Kamonji", "Palu Barat", "Kantor Kelurahan Kamonji", "Mohamad Rizal, S.A.P", "Jl. Datu Pamusu No.7, Kamonji, Kec. Palu Bar., Kota Palu, Sulawesi Tengah 94223"},
+	{"Lere", "Palu Barat", "Kantor Kelurahan Lere", "Muhammad Fahmi, S.E | Megawati", "Jl. Pangeran Hidayat, Lere, Kec. Palu Bar., Kota Palu, Sulawesi Tengah 94221"},
+	{"Siranindi", "Palu Barat", "Kantor Kelurahan Siranindi", "Sumarsih, SE., M.H", "Jl. Siranindi, Palu Barat, Palu City, Central Sulawesi 94111"},
+	{"Ujuna", "Palu Barat", "Kantor Kelurahan Ujuna", "Reenas, S.Sos", "Jl. Sungai Wuno No.17, Ujuna, Kec. Palu Bar., Kota Palu, Sulawesi Tengah 94222"},
+	{"Birobuli Selatan", "Palu Selatan", "Kantor Kelurahan Birobuli Selatan", "Irma, S.Sos", "Jl. Kijang Utara 2 No.7 Blok K, Birobuli Sel., Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94235"},
+	{"Birobuli Utara", "Palu Selatan", "Kantor Kelurahan Birobuli Utara", "Rini Suwarni, S.H., M.H", "Jl. Prof. Moh. Yamin No.2, Birobuli Utara, Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94111"},
+	{"Petobo", "Palu Selatan", "Kantor Kelurahan Petobo", "Alfin H. Ladjuni, S.Sos", "Jl. Moh. Soeharto, Petobo, Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94234"},
+	{"Tatura Selatan", "Palu Selatan", "Kantor Kelurahan Tatura Selatan", "Suhardin, S.Sos", "Jl. I Gusti Ngurah Rai, Tatura Sel., Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94111"},
+	{"Tatura Utara", "Palu Selatan", "Kantor Kelurahan Tatura Utara", "Firman H. Nipo, S.Pd., M.A.P", "Jl. Anoa, Tatura Utara, Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94111"},
+	{"Besusu Barat", "Palu Timur", "Kantor Kelurahan Besusu Barat", "Adriani, S.Sos", "Jl. DR. Suharso No.18, Besusu Bar., Kec. Palu Tim., Kota Palu, Sulawesi Tengah 94118"},
+	{"Besusu Tengah", "Palu Timur", "Kantor Kelurahan Besusu Tengah", "Hardi Eka Yanto Tsar, S.Sos., M.A.P", "Jl. Gatot Subroto No.16, Besusu Tengah, Kec. Palu Tim., Kota Palu, Sulawesi Tengah 94118"},
+	{"Besusu Timur", "Palu Timur", "Kantor Kelurahan Besusu Timur", "Deden A. Wijaya, SH", "Jl. Urip Sumoharjo No.6, Besusu Tim., Kec. Palu Tim., Kota Palu, Sulawesi Tengah 94118"},
+	{"Lolu Selatan", "Palu Timur", "Kantor Kelurahan Lolu Selatan", "Fadli Sabola, S.Kom.", "Jl. Ongka Malino No.17, Lolu Sel., Kec. Palu Sel., Kota Palu, Sulawesi Tengah 94111"},
+	{"Lolu Utara", "Palu Timur", "Kantor Kelurahan Lolu Utara", "Abdul Arifin, S.Sos", "Jl. Wolter Monginsidi, Lolu Utara, Kec. Palu Tim., Kota Palu, Sulawesi Tengah 94112"},
+	{"Boyaoge", "Tatanga", "Kantor Kelurahan Boyaoge", "Idrus Mansur, S.E", "Jl. Anggur IV, Boyaoge, Kec. Tatanga, Kota Palu, Sulawesi Tengah 94222"},
+	{"Duyu", "Tatanga", "Kantor Kelurahan Duyu", "Erni, S.A.P", "Jl. Padanjakaya Duyu, Tatanga, Palu City, Central Sulawesi"},
+	{"Nunu", "Tatanga", "Kantor Kelurahan Nunu", "Astuti Wulandari, S.Sos", "Jl. Beringin lorong02 no 02, Nunu, Kec. Tatanga, Kota Palu, Sulawesi Tengah 94222"},
+	{"Palupi", "Tatanga", "Kantor Kelurahan Palupi", "Sry Rahayu, S.H., M.H.", "Jl. Poros Palu Bangga Palupi, Ulujadi, Palu City, Central Sulawesi 94222"},
+	{"Pengawu", "Tatanga", "Kantor Kelurahan Pengawu", "Boby Rosan Hedar, S.H", "Jl. Malontara No.12, Pengawu, Kec. Tatanga, Kota Palu, Sulawesi Tengah"},
+	{"Tavanjuka", "Tatanga", "Kantor Kelurahan Tavanjuka", "Putra Maharandha Airlangga, S.STP., M.H", "Jl. Anggur IV, Boyaoge, Kec. Tatanga, Kota Palu, Sulawesi Tengah 94222"},
+	{"Mamboro", "Palu Utara", "Kantor Kelurahan Mamboro", "Moh Gusfan, SH", "Jl. Trans Sulawesi, Kec. Palu Utara, Palu, Sulawesi Tengah 94145"},
+	{"Mamboro Barat", "Palu Utara", "Kantor Kelurahan Mamboro Barat", "Megawaty Muid, SE", "Jl. Trans Sulawesi No.153, Mamboro, Kec. Palu Utara, Palu, Sulawesi Tengah 94145"},
+}
+
+var letterDistrictNames = []string{"Mantikulore", "Palu Barat", "Palu Selatan", "Palu Timur", "Palu Utara", "Tatanga"}
+
 var districts = []string{"Mantikulore", "Palu Barat", "Palu Selatan", "Palu Timur", "Palu Utara", "Tatanga", "Tawaeli", "Ulujadi"}
 
 var neighborhoods = map[string][]string{
@@ -272,6 +366,71 @@ var neighborhoods = map[string][]string{
 	"Tatanga":      {"Duyu", "Nunu", "Tatura Utara"},
 	"Tawaeli":      {"Baiya", "Lasoani", "Panau"},
 	"Ulujadi":      {"Buluri", "Donggala Kodi", "Silae"},
+}
+
+func letterNeighborhoods() map[string][]string {
+	result := make(map[string][]string)
+	for _, office := range letterOffices {
+		result[office.District] = append(result[office.District], office.Neighborhood)
+	}
+	return result
+}
+
+func letterOffice(district, neighborhood string) (LetterOffice, bool) {
+	for _, office := range letterOffices {
+		if office.District == district && office.Neighborhood == neighborhood {
+			return office, true
+		}
+	}
+	return LetterOffice{}, false
+}
+
+func validLetterOffice(district, neighborhood string) bool {
+	_, ok := letterOffice(district, neighborhood)
+	return ok
+}
+
+func requestBelongsToOffice(user User, request SuratRequest) bool {
+	if user.Role != "staf" && user.Role != "lurah" {
+		return false
+	}
+	if _, ok := letterOffice(user.OfficeDistrict, user.OfficeNeighborhood); !ok {
+		return false
+	}
+	return request.District == user.OfficeDistrict && request.Neighborhood == user.OfficeNeighborhood
+}
+
+func residentBelongsToOffice(staff, resident User) bool {
+	if staff.Role != "staf" || resident.Role != "warga" {
+		return false
+	}
+	if _, ok := letterOffice(staff.OfficeDistrict, staff.OfficeNeighborhood); !ok {
+		return false
+	}
+	return resident.HomeDistrict == staff.OfficeDistrict &&
+		resident.HomeNeighborhood == staff.OfficeNeighborhood
+}
+
+func canAccessLetter(user User, request SuratRequest) bool {
+	if user.Role == "warga" {
+		return request.UserID == user.ID
+	}
+	return requestBelongsToOffice(user, request)
+}
+
+func officeLetterEmail(office LetterOffice) string {
+	if office.District == "Mantikulore" && office.Neighborhood == "Tondo" {
+		return "tondo@palukota.go.id"
+	}
+	return ""
+}
+
+func officeLetterAddress(office LetterOffice) string {
+	address := "Alamat: " + office.Address
+	if email := officeLetterEmail(office); email != "" {
+		address += " | Email: " + email
+	}
+	return address
 }
 
 func main() {
@@ -311,6 +470,7 @@ func main() {
 			}
 		},
 		"fieldKey":   fieldKey,
+		"join":       strings.Join,
 		"date":       func(t time.Time) string { return t.Format("02 Jan 2006, 15:04") },
 		"lookupUser": func(id string) User { return store.snapshot().Users[id] },
 	}).ParseGlob(filepath.Join("templates", "*.html"))
@@ -331,6 +491,7 @@ func main() {
 	mux.HandleFunc("GET /dashboard", app.dashboard)
 	mux.HandleFunc("GET /surat/baru", app.newSuratPage)
 	mux.HandleFunc("POST /surat", app.createSurat)
+	mux.HandleFunc("POST /api/v1/letters/draft-preview", app.draftPreview)
 	mux.HandleFunc("GET /aduan/baru", app.newComplaintPage)
 	mux.HandleFunc("POST /aduan", app.createComplaint)
 	mux.HandleFunc("GET /tracking", app.tracking)
@@ -360,24 +521,149 @@ func envOr(key, fallback string) string {
 
 func seedDemoUsers(store *Store) error {
 	snapshot := store.snapshot()
-	if len(snapshot.Users) > 0 {
-		return nil
-	}
-	demo := []User{
-		{ID: "demo-warga", NIK: "7271010101900001", Name: "Ayu Pratiwi", Email: "warga@silayang.local", Phone: "081234567890", BirthDate: "1990-01-01", Gender: "P", Address: "Jl. Mawar No. 12, Kel. Talise, Palu", Role: "warga", AccountStatus: "aktif"},
-		{ID: "demo-staf", NIK: "7271010101800002", Name: "Rizal Hidayat", Email: "staf@silayang.local", Phone: "081234567891", BirthDate: "1980-01-01", Gender: "L", Address: "Kantor Kelurahan", Role: "staf", AccountStatus: "aktif"},
-		{ID: "demo-lurah", NIK: "7271010101700003", Name: "Nur Aisyah", Email: "lurah@silayang.local", Phone: "081234567892", BirthDate: "1970-01-01", Gender: "P", Address: "Kantor Kelurahan", Role: "lurah", AccountStatus: "aktif"},
-	}
-	for i := range demo {
-		demo[i].CreatedAt = time.Now()
-		demo[i].PasswordHash = hashPassword("silayang123")
+	if len(snapshot.Users) == 0 {
+		demo := []User{
+			{ID: "demo-warga", NIK: "7271010101900001", Name: "Ayu Pratiwi", Email: "warga@silayang.local", Phone: "081234567890", BirthPlace: "Palu", BirthDate: "1990-01-01", Gender: "P", Address: "Jl. Mawar No. 12, Kel. Talise, Palu", Occupation: "Wiraswasta", Role: "warga", AccountStatus: "aktif"},
+			{ID: "demo-staf", NIK: "7271010101800002", Name: "Rizal Hidayat", Email: "staf@silayang.local", Phone: "081234567891", BirthDate: "1980-01-01", Gender: "L", Address: "Kantor Kelurahan", Role: "staf", AccountStatus: "aktif"},
+			{ID: "demo-lurah", NIK: "7271010101700003", Name: "Nur Aisyah", Email: "lurah@silayang.local", Phone: "081234567892", BirthDate: "1970-01-01", Gender: "P", Address: "Kantor Kelurahan", Role: "lurah", AccountStatus: "aktif"},
+		}
+		for i := range demo {
+			demo[i].CreatedAt = time.Now()
+			demo[i].PasswordHash = hashPassword("silayang123")
+		}
+		if err := store.update(func(db *database) error {
+			for _, user := range demo {
+				db.Users[user.ID] = user
+			}
+			return nil
+		}); err != nil {
+			return err
+		}
 	}
 	return store.update(func(db *database) error {
-		for _, user := range demo {
-			db.Users[user.ID] = user
+		for _, id := range []string{"demo-staf", "demo-lurah"} {
+			user, ok := db.Users[id]
+			if ok && user.OfficeDistrict == "" && user.OfficeNeighborhood == "" {
+				user.OfficeDistrict, user.OfficeNeighborhood = "Mantikulore", "Talise"
+				db.Users[id] = user
+			}
+		}
+
+		defaultPasswordHash := ""
+		for _, office := range letterOffices {
+			for _, role := range []string{"staf", "lurah"} {
+				id := officeAccountID(role, office)
+				email := officeAccountEmail(role, office)
+				account, exists := db.Users[id]
+				if exists {
+					if account.Role != role {
+						return fmt.Errorf("akun wilayah %s memiliki peran tidak sesuai", id)
+					}
+					account.OfficeDistrict, account.OfficeNeighborhood = office.District, office.Neighborhood
+					if account.AccountStatus == "" {
+						account.AccountStatus = "aktif"
+					}
+					if account.PasswordHash == "" {
+						if defaultPasswordHash == "" {
+							defaultPasswordHash = hashPassword("silayang123")
+						}
+						account.PasswordHash = defaultPasswordHash
+					}
+					db.Users[id] = account
+					continue
+				}
+				for otherID, other := range db.Users {
+					if strings.EqualFold(other.Email, email) {
+						return fmt.Errorf("email akun wilayah %s sudah dipakai oleh akun %s", email, otherID)
+					}
+				}
+				if defaultPasswordHash == "" {
+					defaultPasswordHash = hashPassword("silayang123")
+				}
+				name := "Staf Kelurahan " + office.Neighborhood
+				if role == "lurah" {
+					name = office.Mayor
+				}
+				db.Users[id] = User{
+					ID: id, Name: name, Email: email, Role: role, AccountStatus: "aktif",
+					OfficeDistrict: office.District, OfficeNeighborhood: office.Neighborhood,
+					PasswordHash: defaultPasswordHash, CreatedAt: time.Now(),
+				}
+			}
+		}
+		for id, resident := range db.Users {
+			if resident.Role != "warga" || (resident.HomeDistrict != "" && resident.HomeNeighborhood != "") {
+				continue
+			}
+			office, ok := inferLetterOfficeFromAddress(resident.Address)
+			if !ok {
+				continue
+			}
+			resident.HomeDistrict, resident.HomeNeighborhood = office.District, office.Neighborhood
+			db.Users[id] = resident
+		}
+		for id, request := range db.Requests {
+			if request.District != "" && request.Neighborhood != "" {
+				continue
+			}
+			office, ok := inferLetterOfficeFromAddress(request.Applicant["alamat"])
+			if !ok {
+				continue
+			}
+			request.District, request.Neighborhood = office.District, office.Neighborhood
+			db.Requests[id] = request
 		}
 		return nil
 	})
+}
+
+func officeAccountID(role string, office LetterOffice) string {
+	slug := strings.ReplaceAll(fieldKey(office.District+" "+office.Neighborhood), "_", "-")
+	return role + "-" + slug
+}
+
+func officeAccountEmail(role string, office LetterOffice) string {
+	slug := strings.ReplaceAll(fieldKey(office.District+" "+office.Neighborhood), "_", "-")
+	return role + "." + slug + "@silayang.local"
+}
+
+func inferLetterOfficeFromAddress(address string) (LetterOffice, bool) {
+	normalized := strings.ToLower(strings.NewReplacer(".", " ", ",", " ", ";", " ", ":", " ").Replace(address))
+	tokens := strings.Fields(normalized)
+	for i, token := range tokens {
+		if token != "kel" && token != "kelurahan" {
+			continue
+		}
+		remaining := tokens[i+1:]
+		bestLength := 0
+		var match LetterOffice
+		ambiguous := false
+		for _, office := range letterOffices {
+			name := strings.Fields(strings.ToLower(office.Neighborhood))
+			if len(name) <= bestLength || len(name) > len(remaining) {
+				continue
+			}
+			matched := true
+			for j := range name {
+				if remaining[j] != name[j] {
+					matched = false
+					break
+				}
+			}
+			if matched {
+				switch {
+				case len(name) > bestLength:
+					bestLength, match, ambiguous = len(name), office, false
+				case len(name) == bestLength && (match.District != office.District || match.Neighborhood != office.Neighborhood):
+					ambiguous = true
+				}
+			}
+		}
+		if bestLength > 0 && !ambiguous {
+			return match, true
+		}
+	}
+	return LetterOffice{}, false
 }
 
 func (a *App) home(w http.ResponseWriter, r *http.Request) {
@@ -424,7 +710,10 @@ func (a *App) login(w http.ResponseWriter, r *http.Request) {
 }
 
 func (a *App) registerPage(w http.ResponseWriter, r *http.Request) {
-	a.render(w, http.StatusOK, "auth", PageData{Title: "Daftar akun warga", Code: "register"})
+	a.render(w, http.StatusOK, "auth", PageData{
+		Title: "Daftar akun warga", Code: "register",
+		Districts: letterDistrictNames, Neighborhoods: letterNeighborhoods(),
+	})
 }
 
 func (a *App) register(w http.ResponseWriter, r *http.Request) {
@@ -435,12 +724,17 @@ func (a *App) register(w http.ResponseWriter, r *http.Request) {
 	user := User{
 		ID: randomID(), NIK: strings.TrimSpace(r.FormValue("nik")), Name: strings.TrimSpace(r.FormValue("name")),
 		Email: strings.ToLower(strings.TrimSpace(r.FormValue("email"))), Phone: strings.TrimSpace(r.FormValue("phone")),
-		BirthDate: r.FormValue("birth_date"), Gender: r.FormValue("gender"), Address: strings.TrimSpace(r.FormValue("address")),
-		Role: "warga", AccountStatus: "pending", PasswordHash: hashPassword(r.FormValue("password")), CreatedAt: time.Now(),
+		BirthPlace: strings.TrimSpace(r.FormValue("birth_place")), BirthDate: r.FormValue("birth_date"),
+		Gender: r.FormValue("gender"), Address: strings.TrimSpace(r.FormValue("address")),
+		Occupation:       strings.TrimSpace(r.FormValue("occupation")),
+		HomeDistrict:     strings.TrimSpace(r.FormValue("home_district")),
+		HomeNeighborhood: strings.TrimSpace(r.FormValue("home_neighborhood")),
+		Role:             "warga", AccountStatus: "pending", PasswordHash: hashPassword(r.FormValue("password")), CreatedAt: time.Now(),
 	}
 	password := r.FormValue("password")
 	if len(user.NIK) != 16 || !digitsOnly(user.NIK) || user.Name == "" || user.Email == "" || user.Phone == "" ||
-		user.BirthDate == "" || (user.Gender != "L" && user.Gender != "P") || user.Address == "" || len(password) < 8 {
+		user.BirthDate == "" || (user.Gender != "L" && user.Gender != "P") || user.Address == "" ||
+		!validLetterOffice(user.HomeDistrict, user.HomeNeighborhood) || len(password) < 8 {
 		a.renderError(w, "register", "Lengkapi semua data. NIK harus 16 digit dan kata sandi minimal 8 karakter.")
 		return
 	}
@@ -485,10 +779,13 @@ func (a *App) dashboard(w http.ResponseWriter, r *http.Request) {
 	if user == nil {
 		return
 	}
-	data := PageData{Title: "Ringkasan", User: user, Services: services, Categories: complaintCategories, Notice: noticeFor(r.URL.Query().Get("notice"))}
+	data := PageData{
+		Title: "Ringkasan", User: user, Services: services, Categories: complaintCategories,
+		Notice: dashboardNotice(*user, r.URL.Query().Get("notice")),
+	}
 	snapshot := a.store.snapshot()
 	for _, item := range snapshot.Requests {
-		if item.UserID == user.ID || user.Role != "warga" {
+		if canAccessLetter(*user, item) {
 			data.Requests = append(data.Requests, item)
 		}
 	}
@@ -500,11 +797,14 @@ func (a *App) dashboard(w http.ResponseWriter, r *http.Request) {
 	sort.Slice(data.Requests, func(i, j int) bool { return data.Requests[i].CreatedAt.After(data.Requests[j].CreatedAt) })
 	sort.Slice(data.Complaints, func(i, j int) bool { return data.Complaints[i].CreatedAt.After(data.Complaints[j].CreatedAt) })
 	for _, resident := range snapshot.Users {
-		if resident.Role == "warga" && resident.AccountStatus == "pending" {
+		if resident.AccountStatus == "pending" && residentBelongsToOffice(*user, resident) {
 			data.Stats.Residents++
 		}
 	}
 	for _, request := range snapshot.Requests {
+		if !requestBelongsToOffice(*user, request) {
+			continue
+		}
 		switch request.Status {
 		case "pending_verifikasi":
 			data.Stats.Pending++
@@ -523,7 +823,7 @@ func (a *App) newSuratPage(w http.ResponseWriter, r *http.Request) {
 	if user == nil {
 		return
 	}
-	a.render(w, http.StatusOK, "surat_form", PageData{Title: "Ajukan surat", User: user, Services: services})
+	a.render(w, http.StatusOK, "surat_form", PageData{Title: "Ajukan surat", User: user, Services: services, Districts: letterDistrictNames, Neighborhoods: letterNeighborhoods()})
 }
 
 func (a *App) createSurat(w http.ResponseWriter, r *http.Request) {
@@ -540,20 +840,35 @@ func (a *App) createSurat(w http.ResponseWriter, r *http.Request) {
 		a.renderFormError(w, "surat_form", "Pilih jenis layanan surat yang tersedia.", user)
 		return
 	}
+	district := strings.TrimSpace(r.FormValue("kecamatan"))
+	neighborhood := strings.TrimSpace(r.FormValue("kelurahan"))
+	if _, ok := letterOffice(district, neighborhood); !ok {
+		a.renderFormError(w, "surat_form", "Pilih kecamatan dan kelurahan yang valid sebelum memilih layanan surat.", user)
+		return
+	}
+	purpose := strings.TrimSpace(r.FormValue("keperluan"))
+	if purpose == "" {
+		a.renderFormError(w, "surat_form", "Tujuan atau keperluan surat wajib diisi.", user)
+		return
+	}
 	rtNumber := strings.TrimSpace(r.FormValue("rt_letter_number"))
 	if rtNumber == "" {
 		a.renderFormError(w, "surat_form", "Nomor surat pengantar RT wajib diisi.", user)
 		return
 	}
 	applicant := make(map[string]string)
-	for _, key := range []string{"nama", "nik", "tanggal_lahir", "jenis_kelamin", "agama", "kewarganegaraan", "pekerjaan", "alamat"} {
+	for _, key := range []string{"nama", "nik", "tempat_lahir", "tanggal_lahir", "jenis_kelamin", "agama", "kewarganegaraan", "pekerjaan", "alamat"} {
 		value := strings.TrimSpace(r.FormValue("applicant_" + key))
 		if value != "" {
 			applicant[key] = value
 		}
 	}
 	if r.FormValue("is_self") == "true" {
-		applicant["nama"], applicant["nik"], applicant["tanggal_lahir"], applicant["jenis_kelamin"], applicant["alamat"] = user.Name, user.NIK, user.BirthDate, user.Gender, user.Address
+		applicant["nama"], applicant["nik"], applicant["tempat_lahir"], applicant["tanggal_lahir"], applicant["jenis_kelamin"], applicant["pekerjaan"], applicant["alamat"] =
+			user.Name, user.NIK, user.BirthPlace, user.BirthDate, user.Gender, user.Occupation, user.Address
+		if applicant["pekerjaan"] == "" {
+			applicant["pekerjaan"] = strings.TrimSpace(r.FormValue("applicant_pekerjaan"))
+		}
 	}
 	if applicant["nama"] == "" || len(applicant["nik"]) != 16 || !digitsOnly(applicant["nik"]) {
 		a.renderFormError(w, "surat_form", "Nama dan NIK subjek surat wajib diisi; NIK harus 16 digit.", user)
@@ -580,8 +895,9 @@ func (a *App) createSurat(w http.ResponseWriter, r *http.Request) {
 	now := time.Now()
 	request := SuratRequest{
 		ID: randomID(), TrackingCode: trackingCode("REQ"), UserID: user.ID, ServiceCode: service.Code,
-		ServiceName: service.Name, IsSelf: r.FormValue("is_self") == "true", Applicant: applicant,
-		Specific: specific, RTLetterNumber: rtNumber, Attachments: attachments,
+		ServiceName: service.Name, District: district, Neighborhood: neighborhood,
+		IsSelf: r.FormValue("is_self") == "true", Applicant: applicant, Specific: specific, Purpose: purpose,
+		RTLetterNumber: rtNumber, Attachments: attachments,
 		Status: "pending_verifikasi", CreatedAt: now, UpdatedAt: now,
 	}
 	if err := a.store.update(func(db *database) error {
@@ -592,6 +908,99 @@ func (a *App) createSurat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	http.Redirect(w, r, "/dashboard?notice=request-created", http.StatusSeeOther)
+}
+
+func (a *App) draftPreview(w http.ResponseWriter, r *http.Request) {
+	writeJSON := func(status int, response DraftPreviewResponse) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(status)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			log.Printf("menulis respons pratinjau draf: %v", err)
+		}
+	}
+	user := a.currentUser(r)
+	if user == nil {
+		writeJSON(http.StatusUnauthorized, DraftPreviewResponse{Status: "error", Message: "Silakan masuk untuk membuat pratinjau surat."})
+		return
+	}
+	if user.Role != "warga" || user.AccountStatus != "aktif" {
+		writeJSON(http.StatusForbidden, DraftPreviewResponse{Status: "error", Message: "Hanya akun warga terverifikasi yang dapat membuat pratinjau surat."})
+		return
+	}
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+	var input DraftPreviewRequest
+	if err := json.NewDecoder(r.Body).Decode(&input); err != nil {
+		writeJSON(http.StatusBadRequest, DraftPreviewResponse{Status: "error", Message: "Data pratinjau tidak valid."})
+		return
+	}
+	if input.UserID == "" || input.UserID != user.ID {
+		writeJSON(http.StatusForbidden, DraftPreviewResponse{Status: "error", Message: "ID warga tidak sesuai dengan akun yang sedang masuk."})
+		return
+	}
+	service := serviceByCode(input.ServiceCode)
+	if service == nil {
+		writeJSON(http.StatusBadRequest, DraftPreviewResponse{Status: "error", Message: "Jenis surat tidak tersedia."})
+		return
+	}
+	district := strings.TrimSpace(input.Additional["kecamatan"])
+	neighborhood := strings.TrimSpace(input.Additional["kelurahan"])
+	office, ok := letterOffice(district, neighborhood)
+	if !ok {
+		writeJSON(http.StatusBadRequest, DraftPreviewResponse{Status: "error", Message: "Pilih kecamatan dan kelurahan yang valid."})
+		return
+	}
+	purpose := strings.TrimSpace(input.Additional["keperluan"])
+	if purpose == "" {
+		writeJSON(http.StatusUnprocessableEntity, DraftPreviewResponse{Status: "error", Message: "Tujuan atau keperluan surat wajib diisi."})
+		return
+	}
+
+	isSelf := input.Additional["is_self"] != "false"
+	name, nik := user.Name, user.NIK
+	birthPlace, birthDate, gender := user.BirthPlace, user.BirthDate, user.Gender
+	address, occupation := user.Address, user.Occupation
+	if !isSelf {
+		name = strings.TrimSpace(input.Additional["pemohon_nama"])
+		nik = strings.TrimSpace(input.Additional["pemohon_nik"])
+		birthPlace = strings.TrimSpace(input.Additional["pemohon_tempat_lahir"])
+		birthDate = strings.TrimSpace(input.Additional["pemohon_tanggal_lahir"])
+		gender = strings.TrimSpace(input.Additional["pemohon_jenis_kelamin"])
+		address = strings.TrimSpace(input.Additional["pemohon_alamat"])
+		occupation = strings.TrimSpace(input.Additional["pemohon_pekerjaan"])
+	} else if occupation == "" {
+		occupation = strings.TrimSpace(input.Additional["pekerjaan"])
+	}
+	if name == "" || len(nik) != 16 || !digitsOnly(nik) {
+		writeJSON(http.StatusUnprocessableEntity, DraftPreviewResponse{Status: "error", Message: "Nama pemohon dan NIK 16 digit wajib tersedia."})
+		return
+	}
+	if occupation == "" {
+		writeJSON(http.StatusUnprocessableEntity, DraftPreviewResponse{Status: "error", Message: "Pekerjaan belum diisi. Masukkan pekerjaan untuk melanjutkan pratinjau."})
+		return
+	}
+
+	genderName := map[string]string{"L": "Laki-laki", "P": "Perempuan"}[gender]
+	if genderName == "" {
+		genderName = gender
+	}
+	birth := formatBirth(birthPlace, birthDate)
+	var additionalFields []DraftField
+	for _, field := range service.Fields {
+		if value := strings.TrimSpace(input.Additional["specific_"+fieldKey(field)]); value != "" {
+			additionalFields = append(additionalFields, DraftField{Label: field, Value: value})
+		}
+	}
+	now := time.Now()
+	draft := DraftData{
+		LetterName: service.Name,
+		Header:     fmt.Sprintf("PEMERINTAH KOTA PALU\nKECAMATAN %s\nKELURAHAN %s\n%s", strings.ToUpper(district), strings.ToUpper(neighborhood), officeLetterAddress(office)),
+		District:   district, Neighborhood: neighborhood, OfficeName: office.Name, OfficeAddress: office.Address, OfficeEmail: officeLetterEmail(office),
+		FullName: name, NIK: nik, Birth: birth,
+		Gender: genderName, Occupation: occupation, Address: address, Purpose: purpose, OfficialNumber: "",
+		DraftDate: formatDateID(now), MayorName: office.Mayor, MayorNIP: "000000000000000000 (DUMMY)",
+		AdditionalFields: additionalFields,
+	}
+	writeJSON(http.StatusOK, DraftPreviewResponse{Status: "success", DraftData: &draft})
 }
 
 func (a *App) newComplaintPage(w http.ResponseWriter, r *http.Request) {
@@ -674,12 +1083,14 @@ func (a *App) adminPage(w http.ResponseWriter, r *http.Request) {
 	data := PageData{Title: "Panel administrasi", User: user, Notice: noticeFor(r.URL.Query().Get("notice"))}
 	snapshot := a.store.snapshot()
 	for _, resident := range snapshot.Users {
-		if resident.Role == "warga" && resident.AccountStatus == "pending" {
+		if resident.AccountStatus == "pending" && residentBelongsToOffice(*user, resident) {
 			data.Residents = append(data.Residents, resident)
 		}
 	}
 	for _, request := range snapshot.Requests {
-		data.Requests = append(data.Requests, request)
+		if requestBelongsToOffice(*user, request) {
+			data.Requests = append(data.Requests, request)
+		}
 	}
 	for _, complaint := range snapshot.Complaints {
 		data.Complaints = append(data.Complaints, complaint)
@@ -700,7 +1111,7 @@ func (a *App) reviewResident(w http.ResponseWriter, r *http.Request) {
 	reason := strings.TrimSpace(r.FormValue("reason"))
 	err := a.store.update(func(db *database) error {
 		resident, ok := db.Users[id]
-		if !ok || resident.Role != "warga" {
+		if !ok || resident.AccountStatus != "pending" || !residentBelongsToOffice(*user, resident) {
 			return errors.New("akun warga tidak ditemukan")
 		}
 		switch action {
@@ -734,7 +1145,7 @@ func (a *App) reviewSurat(w http.ResponseWriter, r *http.Request) {
 	note := strings.TrimSpace(r.FormValue("note"))
 	err := a.store.update(func(db *database) error {
 		request, ok := db.Requests[id]
-		if !ok {
+		if !ok || !requestBelongsToOffice(*user, request) {
 			return errors.New("permohonan surat tidak ditemukan")
 		}
 		switch action {
@@ -763,12 +1174,8 @@ func (a *App) reviewSurat(w http.ResponseWriter, r *http.Request) {
 			if request.Status != "draft_ready" {
 				return errors.New("permohonan harus berstatus draft siap sebelum disetujui")
 			}
-			hash, err := randomHex(24)
-			if err != nil {
-				return fmt.Errorf("membuat kode verifikasi dokumen: %w", err)
-			}
-			request.Status, request.QRHash = "selesai", hash
-			request.AdminNote = "Disetujui dan ditandatangani secara elektronik (simulasi)."
+			request.Status = "selesai"
+			request.AdminNote = "Disetujui oleh lurah. Tanda tangan, QR, dan NIP pada dokumen hanya tampilan simulasi."
 		default:
 			return errors.New("aksi permohonan tidak dikenal")
 		}
@@ -817,18 +1224,21 @@ func (a *App) document(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	request, ok := a.store.snapshot().Requests[r.PathValue("id")]
-	if !ok || (request.UserID != user.ID && user.Role == "warga") ||
+	if !ok || !canAccessLetter(*user, request) ||
 		(request.Status != "selesai" && request.Status != "draft_ready") ||
 		(request.Status == "draft_ready" && user.Role == "warga") {
 		http.NotFound(w, r)
 		return
 	}
 	var output bytes.Buffer
+	office, _ := letterOffice(request.District, request.Neighborhood)
 	if err := a.templates.ExecuteTemplate(&output, "document", struct {
-		Request   SuratRequest
-		IsDraft   bool
-		VerifyURL string
-	}{request, request.Status == "draft_ready", "/tracking?code=" + request.TrackingCode}); err != nil {
+		Request     SuratRequest
+		IsDraft     bool
+		VerifyURL   string
+		Office      LetterOffice
+		OfficeEmail string
+	}{request, request.Status == "draft_ready", "/tracking?code=" + request.TrackingCode, office, officeLetterEmail(office)}); err != nil {
 		log.Printf("render dokumen: %v", err)
 		http.Error(w, "Dokumen tidak dapat ditampilkan.", http.StatusInternalServerError)
 		return
@@ -852,14 +1262,14 @@ func (a *App) upload(w http.ResponseWriter, r *http.Request) {
 	snapshot := a.store.snapshot()
 	allowed := false
 	for _, owner := range snapshot.Users {
-		if owner.KTPPath == targetPath && user.Role == "staf" {
+		if owner.KTPPath == targetPath && residentBelongsToOffice(*user, owner) {
 			allowed = true
 			break
 		}
 	}
 	if !allowed {
 		for _, request := range snapshot.Requests {
-			if contains(request.Attachments, targetPath) && (request.UserID == user.ID || user.Role == "staf" || user.Role == "lurah") {
+			if contains(request.Attachments, targetPath) && canAccessLetter(*user, request) {
 				allowed = true
 				break
 			}
@@ -903,7 +1313,12 @@ func (a *App) renderError(w http.ResponseWriter, page, message string) {
 	} else if page == "register" {
 		title = "Daftar akun warga"
 	}
-	a.render(w, http.StatusBadRequest, "auth", PageData{Title: title, Code: page, Error: message})
+	data := PageData{Title: title, Code: page, Error: message}
+	if page == "register" {
+		data.Districts = letterDistrictNames
+		data.Neighborhoods = letterNeighborhoods()
+	}
+	a.render(w, http.StatusBadRequest, "auth", data)
 }
 
 func (a *App) renderFormError(w http.ResponseWriter, page, message string, user *User) {
@@ -911,6 +1326,8 @@ func (a *App) renderFormError(w http.ResponseWriter, page, message string, user 
 	data := PageData{Title: title, User: user, Error: message}
 	if page == "surat_form" {
 		data.Services = services
+		data.Districts = letterDistrictNames
+		data.Neighborhoods = letterNeighborhoods()
 	} else {
 		data.Title = "Sampaikan aduan"
 		data.Categories = complaintCategories
@@ -1075,6 +1492,26 @@ func trackingCode(prefix string) string {
 	return fmt.Sprintf("%s-%s-%s", prefix, time.Now().Format("20060102"), strings.ToUpper(randomID()[:6]))
 }
 
+func formatDateID(value time.Time) string {
+	months := [...]string{"Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"}
+	return fmt.Sprintf("%02d %s %04d", value.Day(), months[int(value.Month())-1], value.Year())
+}
+
+func formatBirth(place, date string) string {
+	formattedDate := strings.TrimSpace(date)
+	if parsed, err := time.Parse("2006-01-02", formattedDate); err == nil {
+		formattedDate = formatDateID(parsed)
+	}
+	if formattedDate == "" {
+		formattedDate = "Belum diisi"
+	}
+	place = strings.TrimSpace(place)
+	if place == "" {
+		return formattedDate
+	}
+	return place + ", " + formattedDate
+}
+
 func randomID() string {
 	value, err := randomHex(16)
 	if err != nil {
@@ -1119,6 +1556,20 @@ func noticeFor(code string) string {
 		"complaint-reviewed": "Tindak lanjut aduan berhasil diperbarui.",
 	}
 	return notices[code]
+}
+
+func dashboardNotice(user User, code string) string {
+	if code != "pending" || user.Role != "warga" {
+		return noticeFor(code)
+	}
+	switch user.AccountStatus {
+	case "pending":
+		return noticeFor(code)
+	case "aktif":
+		return "Akun Anda sudah diverifikasi. Silakan lanjutkan menggunakan layanan SILAYANG."
+	default:
+		return ""
+	}
 }
 
 func statusName(status string) string {
