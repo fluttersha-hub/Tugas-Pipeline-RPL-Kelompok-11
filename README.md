@@ -1,56 +1,145 @@
 # SILAYANG
 
-Portal layanan warga dan administrasi kelurahan berbasis Go. Aplikasi ini menggunakan `net/http`, HTML template, dan penyimpanan JSON lokal sehingga dapat dijalankan tanpa mengunduh dependensi Go tambahan.
+SILAYANG adalah portal layanan administrasi warga dan kelurahan berbasis Go. Warga dapat mengajukan surat, menyampaikan aduan, dan melacak permohonan. Staf kelurahan dan lurah mengelola layanan sesuai wilayah akun mereka.
 
-## Menjalankan aplikasi
+## Mulai cepat
+
+### Persyaratan
+
+- Go **1.22 atau lebih baru**.
+- PowerShell di Windows, Terminal di macOS/Linux, atau terminal bawaan VS Code.
+- Tidak perlu memasang database atau paket tambahan.
+
+Periksa Go:
 
 ```powershell
+go version
+```
+
+### Jalankan aplikasi
+
+1. Buka folder proyek di VS Code.
+2. Buka terminal (**Terminal → New Terminal**). Pastikan terminal berada di folder yang berisi `go.mod`.
+3. Jalankan:
+
+   ```powershell
+   go run .
+   ```
+
+4. Tunggu sampai terminal menampilkan alamat aplikasi, lalu buka **http://localhost:8080** di browser.
+5. Untuk menghentikan aplikasi, kembali ke terminal dan tekan **Ctrl+C**.
+
+Jalankan `go run .` dari folder proyek, bukan dengan membuka `main.go` langsung. Aplikasi membuat folder data dan unggahan jika belum tersedia.
+
+### Jika port 8080 sedang digunakan
+
+Pilih port lain sebelum menjalankan aplikasi:
+
+```powershell
+$env:SILAYANG_ADDR = ":8081"
 go run .
 ```
 
-Buka `http://localhost:8080`. Data tersimpan di `data/silayang.json`, sedangkan berkas yang diunggah tersimpan di folder `uploads`.
+Lalu buka **http://localhost:8081**.
 
-Pengaturan opsional melalui environment:
+### Buat file aplikasi (opsional)
 
-| Variabel | Default | Kegunaan |
+Untuk mengompilasi aplikasi menjadi file `.exe`:
+
+```powershell
+go build -o silayang.exe .
+.\silayang.exe
+```
+
+## Masuk dan mencoba aplikasi
+
+Kata sandi awal akun demo adalah **`silayang123`**.
+
+| Peran | Email demo | Catatan |
 | --- | --- | --- |
-| `SILAYANG_ADDR` | `:8080` | Alamat dan port HTTP |
-| `SILAYANG_DATA` | `data/silayang.json` | Lokasi penyimpanan data |
-| `SILAYANG_UPLOADS` | `uploads` | Lokasi penyimpanan berkas |
-| `SILAYANG_SECRET` | rahasia development | Kunci penandatanganan cookie sesi |
-| `SILAYANG_COOKIE_SECURE` | `false` | Setel `true` saat layanan diakses melalui HTTPS |
+| Warga | `warga@silayang.local` | Akun demo aktif |
+| Staf | `staf@silayang.local` | Akun lama, dibatasi ke Kelurahan Talise |
+| Lurah | `lurah@silayang.local` | Akun lama, dibatasi ke Kelurahan Talise |
 
-## Akun demo
+Setiap satu dari **32 kelurahan** juga mendapat akun staf dan lurah. Format emailnya:
 
-Database baru akan dibuat dengan akun demo berikut (kata sandi: `silayang123`):
+```text
+staf.<kecamatan>-<kelurahan>@silayang.local
+lurah.<kecamatan>-<kelurahan>@silayang.local
+```
 
-| Peran | Email |
-| --- | --- |
-| Warga | `warga@silayang.local` |
-| Staf verifikator | `staf@silayang.local` |
-| Lurah | `lurah@silayang.local` |
+Contoh akun Tondo:
 
-Setiap kelurahan pada data wilayah juga mendapatkan satu akun staf dan satu akun lurah. Format emailnya `staf.<kecamatan>-<kelurahan>@silayang.local` dan `lurah.<kecamatan>-<kelurahan>@silayang.local`, menggunakan nama wilayah huruf kecil dengan spasi menjadi tanda hubung. Contoh untuk Tondo: `staf.mantikulore-tondo@silayang.local` dan `lurah.mantikulore-tondo@silayang.local`. Password awal semua akun wilayah adalah `silayang123`. Akun demo staf/lurah lama dibatasi ke Kelurahan Talise.
+```text
+staf.mantikulore-tondo@silayang.local
+lurah.mantikulore-tondo@silayang.local
+```
 
-Pendaftaran warga baru berstatus menunggu verifikasi. Akun warga aktif dapat mengajukan satu dari 30 jenis surat, melaporkan aduan dalam 12 kategori, dan melacak status dengan kode permohonan. Staf dapat memverifikasi akun, memeriksa surat, membuat draft bernomor, dan menanggapi aduan. Lurah dapat menyetujui draft dan memperbarui tindak lanjut aduan.
+Semua akun wilayah menggunakan kata sandi awal yang sama, `silayang123`. Akun wilayah dibuat otomatis saat aplikasi dijalankan. Gunakan akun sesuai kelurahan yang ingin diuji.
 
-Saat mendaftar, warga memilih kecamatan dan kelurahan domisili. Daftar verifikasi warga, tindakan setuju/tolak, dan akses foto KTP staf dibatasi ke domisili yang sama; inbox surat, tindakan verifikasi surat, dokumen, dan lampiran surat staf/lurah juga dibatasi ke kelurahan akun. Akun lama hanya dipetakan otomatis jika alamatnya menyebut kelurahan secara eksplisit; akun tanpa wilayah tidak ditampilkan dalam daftar verifikasi. Password bersama hanya untuk demonstrasi lokal dan harus diganti sebelum deployment nyata.
+### Alur singkat
 
-## Pratinjau draf surat
+1. **Warga:** masuk dengan akun demo atau daftar akun baru. Saat mendaftar, pilih kecamatan dan kelurahan domisili.
+2. **Verifikasi:** akun baru menunggu persetujuan staf dari kelurahan domisili. Warga dapat mengajukan layanan setelah akun aktif.
+3. **Surat:** warga memilih wilayah dan jenis surat, mengisi kebutuhan, lalu mengirim permohonan. Staf memeriksa dan menyiapkan draft; lurah menyetujuinya.
+4. **Aduan:** warga mengirim aduan, lalu memantau tindak lanjutnya melalui dashboard.
+5. **Lacak:** gunakan kode tracking yang diberikan setelah permohonan atau aduan dikirim.
 
-Warga aktif memilih kecamatan dan kelurahan terlebih dahulu, lalu dapat melihat pratinjau surat tanpa mengirim permohonan. Daftar wilayah, nama kantor, alamat kantor, dan nama lurah mengikuti data pada spreadsheet daftar kelurahan yang disediakan; alamat dan email Tondo mengikuti rincian pada spesifikasi kop terbaru. Kop menampilkan lambang Kota Palu di kiri, teks yang tepat di tengah, dan garis pemisah ganda. Isi draf bersifat read-only; tombol **Unduh PDF** membuka dialog cetak browser. Jika pekerjaan belum tersedia, warga diminta mengisinya sebelum pratinjau dibuat.
+Staf hanya dapat melihat pendaftar, foto KTP, dan permohonan surat untuk kelurahan akunnya. Lurah hanya dapat menyetujui draft surat dari kelurahannya. Data warga lama hanya dipetakan otomatis jika alamatnya menyebut nama kelurahan secara jelas.
 
-Endpoint `POST /api/v1/letters/draft-preview` menerima JSON `user_id`, `jenis_surat_id` (kode layanan), dan `data_tambahan`. Identitas diambil dari sesi warga yang terverifikasi, bukan dari nilai identitas kiriman klien. Nomor surat sengaja kosong sampai staf memproses permohonan. Nama lurah berasal dari data wilayah spreadsheet; NIP pada pratinjau adalah nilai dummy dan bukan identitas resmi. Spreadsheet saat ini mencantumkan 32 kantor di 6 kecamatan.
+## Data dan penyimpanan
 
-## Batasan dan keamanan deployment
+Aplikasi **tidak memakai database SQL**. Data akun, surat, dan aduan disimpan dalam file JSON:
 
-- Blok tanda tangan pada dokumen hanya tampilan. QR dan NIP adalah dummy; tidak ada kode verifikasi atau tanda tangan elektronik resmi. Surat dapat dicetak atau disimpan sebagai PDF melalui dialog cetak browser.
-- Notifikasi WhatsApp/email dan ekspor laporan belum tersambung ke penyedia eksternal.
-- Akun demo, secret default, server HTTP, dan penyimpanan JSON lokal hanya untuk demonstrasi/pengembangan. Sebelum digunakan untuk layanan nyata, konfigurasi secret acak, HTTPS, backup dan database produksi, kebijakan retensi/akses data, integrasi TTE resmi, serta kanal notifikasi.
-- Berkas unggahan dibatasi 5 MB dan hanya dapat diakses oleh pemilik serta petugas yang berwenang.
+```text
+data/silayang.json
+```
 
-## Pengujian
+Berkas unggahan, seperti foto KTP dan lampiran, disimpan di:
+
+```text
+uploads/
+```
+
+Data tetap ada setelah aplikasi dihentikan. Jangan menghapus atau membagikan file data maupun unggahan jika berisi informasi pribadi.
+
+## Fitur utama
+
+- Pendaftaran dan verifikasi akun warga.
+- 30 jenis layanan surat dan pratinjau draf A4.
+- Pembuatan, pemeriksaan, dan persetujuan surat sesuai wilayah akun.
+- Aduan warga dan pelacakan status.
+- Kop surat dinamis dengan data kantor kelurahan.
+
+QR dan NIP pada dokumen yang disetujui adalah **dummy untuk tampilan saja**. QR tidak dapat dipakai untuk verifikasi dan tanda tangan bukan TTE resmi. Kode tracking tetap digunakan untuk melacak status permohonan.
+
+## Pengaturan opsional
+
+Atur variabel berikut sebelum menjalankan `go run .`:
+
+| Variabel | Nilai bawaan | Fungsi |
+| --- | --- | --- |
+| `SILAYANG_ADDR` | `:8080` | Alamat dan port web server |
+| `SILAYANG_DATA` | `data/silayang.json` | Lokasi file data JSON |
+| `SILAYANG_UPLOADS` | `uploads` | Lokasi penyimpanan unggahan |
+| `SILAYANG_SECRET` | Kunci development bawaan | Kunci sesi login |
+| `SILAYANG_COOKIE_SECURE` | `false` | Gunakan `true` jika aplikasi diakses melalui HTTPS |
+
+Contoh mengatur lokasi data di PowerShell:
+
+```powershell
+$env:SILAYANG_DATA = "data\uji.json"
+go run .
+```
+
+## Menjalankan tes
+
+Dari folder proyek, jalankan:
 
 ```powershell
 go test ./...
 ```
+
+## Catatan keamanan
+
+Aplikasi ini ditujukan untuk demonstrasi dan pengembangan lokal. Kata sandi bersama, kunci sesi bawaan, HTTP tanpa HTTPS, dan file JSON lokal **tidak cocok untuk deployment produksi**. Layanan nyata memerlukan autentikasi dan pengelolaan kata sandi yang aman, HTTPS, penyimpanan data produksi, backup, serta TTE resmi.
