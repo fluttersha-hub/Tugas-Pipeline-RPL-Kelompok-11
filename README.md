@@ -81,7 +81,7 @@ Semua akun wilayah menggunakan kata sandi awal yang sama, `silayang123`. Akun wi
 
 1. **Warga:** masuk dengan akun demo atau daftar akun baru. Saat mendaftar, pilih kecamatan dan kelurahan domisili.
 2. **Verifikasi:** akun baru menunggu persetujuan staf dari kelurahan domisili. Warga dapat mengajukan layanan setelah akun aktif.
-3. **Surat:** warga memilih wilayah dan jenis surat, mengisi kebutuhan, lalu mengirim permohonan. Staf memeriksa dan menyiapkan draft; lurah menyetujuinya.
+3. **Surat:** warga memilih wilayah dan jenis surat, mengisi kebutuhan, lalu mengirim permohonan. Staf memeriksa dan menyiapkan draft; lurah menyetujuinya. Setelah status surat **Selesai**, warga dapat memilih **Cetak / Simpan PDF** di riwayat surat, lalu memilih **Simpan sebagai PDF** pada dialog cetak browser.
 4. **Aduan:** warga mengirim aduan, lalu memantau tindak lanjutnya melalui dashboard.
 5. **Lacak:** gunakan kode tracking yang diberikan setelah permohonan atau aduan dikirim.
 

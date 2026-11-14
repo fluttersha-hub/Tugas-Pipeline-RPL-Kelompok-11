@@ -276,6 +276,36 @@ func TestDashboardPendingNoticeUsesLatestAccountStatus(t *testing.T) {
 	}
 }
 
+func TestDashboardShowsPrintLinkOnlyForCompletedLetters(t *testing.T) {
+	templates, err := template.New("dashboard").Funcs(template.FuncMap{
+		"statusClass": func(string) string { return "success" },
+		"statusName":  func(status string) string { return status },
+		"date":        func(value time.Time) string { return value.Format("02 Jan 2006, 15:04") },
+	}).ParseFiles(filepath.Join("templates", "dashboard.html"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	data := PageData{
+		User: &User{Role: "warga", AccountStatus: "aktif"},
+		Requests: []SuratRequest{
+			{ID: "completed-letter", ServiceName: "Surat Selesai", TrackingCode: "SK-001", Status: "selesai"},
+			{ID: "pending-letter", ServiceName: "Surat Menunggu", TrackingCode: "SK-002", Status: "pending_verifikasi"},
+		},
+	}
+	var output bytes.Buffer
+	if err := templates.ExecuteTemplate(&output, "dashboard-content", data); err != nil {
+		t.Fatal(err)
+	}
+	rendered := output.String()
+	if !strings.Contains(rendered, `href="/dokumen/completed-letter"`) ||
+		!strings.Contains(rendered, "Cetak / Simpan PDF") {
+		t.Fatalf("surat selesai tidak memiliki tautan cetak: %s", rendered)
+	}
+	if strings.Contains(rendered, `href="/dokumen/pending-letter"`) {
+		t.Fatal("tautan cetak tampil sebelum surat selesai")
+	}
+}
+
 func TestStaffResidentVerificationAndKTPAreOfficeScoped(t *testing.T) {
 	store, err := openStore(filepath.Join(t.TempDir(), "data.json"))
 	if err != nil {
@@ -467,10 +497,7 @@ func TestApprovedDocumentShowsDummyQRAndNIPWithoutVerificationCode(t *testing.T)
 	if !ok {
 		t.Fatal("kantor Tatura Utara tidak ditemukan")
 	}
-	lurah := User{
-		ID: "lurah-tatura", Role: "lurah", AccountStatus: "aktif",
-		OfficeDistrict: office.District, OfficeNeighborhood: office.Neighborhood,
-	}
+	resident := User{ID: "resident-1", Role: "warga", AccountStatus: "aktif"}
 	request := SuratRequest{
 		ID: "approved-letter", TrackingCode: "SK-TEST-001", UserID: "resident-1",
 		ServiceName: "Surat Keterangan", District: office.District, Neighborhood: office.Neighborhood,
@@ -481,7 +508,7 @@ func TestApprovedDocumentShowsDummyQRAndNIPWithoutVerificationCode(t *testing.T)
 		OfficialNumber: "001/2026", Status: "selesai", UpdatedAt: time.Date(2026, 11, 15, 0, 0, 0, 0, time.UTC),
 	}
 	if err := store.update(func(db *database) error {
-		db.Users[lurah.ID] = lurah
+		db.Users[resident.ID] = resident
 		db.Requests[request.ID] = request
 		return nil
 	}); err != nil {
@@ -495,7 +522,7 @@ func TestApprovedDocumentShowsDummyQRAndNIPWithoutVerificationCode(t *testing.T)
 	}
 	app := &App{store: store, secret: []byte("test-secret"), templates: templates}
 	cookieResponse := httptest.NewRecorder()
-	if err := app.setSession(cookieResponse, lurah.ID); err != nil {
+	if err := app.setSession(cookieResponse, resident.ID); err != nil {
 		t.Fatal(err)
 	}
 	httpRequest := httptest.NewRequest("GET", "/dokumen/"+request.ID, nil)
