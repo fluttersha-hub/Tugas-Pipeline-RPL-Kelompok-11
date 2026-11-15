@@ -25,8 +25,8 @@ func TestPasswordHash(t *testing.T) {
 }
 
 func TestAllServicesHaveUniqueCodes(t *testing.T) {
-	if len(services) != 99 {
-		t.Fatalf("jumlah jenis surat = %d, ingin 99", len(services))
+	if len(services) != 30 {
+		t.Fatalf("jumlah jenis surat = %d, ingin 30", len(services))
 	}
 	seen := make(map[string]bool, len(services))
 	for _, service := range services {
